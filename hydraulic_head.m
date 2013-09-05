@@ -24,8 +24,6 @@ ha       = sqrt(W/K*(L^2-x.^2)+hL^2);
 
 h        = zeros(length(y),length(x));
 h(1,:)   = ha;
-h(end,:) = linspace(h0,hL,length(x))';
-h(:,1)   = h0;
 h(:,end) = hL;
 
 Ksi      = zeros(length(y),length(x));
@@ -36,14 +34,10 @@ J = (2:size(h,2)-1)';
 
 error = 1e6;
 nstep = 0;
-nplot = 100;
+nplot = 1;
 while error > 1e-8
     nstep = nstep + 1;
     h_old = h;
-%     for j = 2 : size(h,2)-1
-%         h(1,j) = (alpha*(h(1,j+1)+h(1,j-1)) + beta*(h(3,j)-2*h(2,j))) / ...
-%             (2*alpha-beta);
-%     end
 %     for j = 2 : size(h,2)-1
 %         for i = 2 : size(h,1)-1
 %             h(i,j) = (alpha*(h(i,j+1)+h(i,j-1)) + beta*(h(i+1,j)+h(i-1,j))) / ...
@@ -52,9 +46,11 @@ while error > 1e-8
 %     end
     h(I,J) = (alpha*(h(I,J+1)+h(I,J-1)) + beta*(h(I+1,J)+h(I-1,J))) / ...
         (2*(alpha+beta));
+    h(2:end,1) = 4/3*h(2:end,2)-1/3*h(2:end,3);
+    h(end,1:end-1) = 4/3*h(end-1,1:end-1)-1/3*h(end-2,1:end-1);
     error = norm(h-h_old);
     if mod(nstep, nplot) == 0 || error - 1e-8 < eps
-        [~,handle] = contour(x,y,flipud(h),50);
+        [~,handle] = contour(x,y,flipud(h),20);
         set(handle,'ShowText','on')
         %pcolor(h)
         %shading interp
