@@ -23,7 +23,7 @@ hL   = 2;                     % unit: m, fixed head at the downgradient boundary
 h0 = sqrt(W/K*L^2+hL^2);
 ha       = sqrt(W/K*(L^2-x.^2)+hL^2);
 h        = zeros(length(y),length(x));
-h(1,:)   = ha(1);
+h(1,:)   = 0;
 index    = find(y>=B-hL);
 h(index,end) = hL;
 
@@ -32,15 +32,18 @@ J = (2:size(h,2)-1)';
 
 qx = zeros(size(h));
 qy = zeros(size(h));
+vx = zeros(size(h));
+vy = zeros(size(h));
 
 error = 1e6;
 nstep = 0;
 nplot = 100;
-omega = 1.0;
+omega = 1.5;
 while error > 1e-6
     nstep = nstep + 1;
     h_old = h;
     
+    h(1,:) = 4/3*h(2,:)-1/3*h(3,:)+2*W*dy/3/KV;
     index = find(y<B-hL);
     h(index,end) = 4/3*h(index,end-1)-1/3*h(index,end-2);  % right
     h(2:end,1) = 4/3*h(2:end,2)-1/3*h(2:end,3); % left
@@ -64,19 +67,19 @@ while error > 1e-6
         set(gca,'YDir','reverse');
         %plot(x,ha,'k','LineWidth',3)
         %ylim([0 10])
-        qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
-        qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
-        qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
-        qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
-        qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
-        ne   = 0.35;                  % effective porosity
-        vx = qx/ne;
-        vy = qy/ne;
-        vx = vx./max(vx(:))*86400;
-        vy = vy./max(vy(:))*86400;
-
-        hold on;
-        handle2 = quiver(X,Y,vx,vy);
+%         qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
+%         qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
+%         qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
+%         qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
+%         qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
+%         ne   = 0.35;                  % effective porosity
+%         vx = qx/ne;
+%         vy = qy/ne;
+%         vx = vx./max(vx(:))*86400;
+%         vy = vy./max(vy(:))*86400;
+% 
+%         hold on;
+%         handle2 = quiver(X,Y,vx,vy);
         %adjust_quiver_arrowhead_size(handle2, 0.1);
         title(['Iteration steps: ', num2str(nstep), ...
             ',    ||error||_{2} = ', num2str(error)])
