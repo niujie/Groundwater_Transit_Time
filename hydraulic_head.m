@@ -3,11 +3,6 @@ B  = 10;         % unit: m, aquifer depth
 dx = 5;          % unit: m, x direction step size 
 dy = 1;        % unit: m, y direction step size
 
-alpha = KH/dx^2;
-beta  = KV/dy^2;
-alphaKsi = 1/dx^2/KH;
-betaKsi  = 1/dy^2/KV;
-
 x = (0:dx:L)';
 y = (0:dy:B)';
 [X,Y] = meshgrid(x,y);
@@ -16,6 +11,11 @@ W  = 0.5/(365*24*60*60);    % unit: m/year -> m/s, surface recharge
 K  = 1e-4;                  % unit: m/s, hydraulic conductivity
 KH = K;                     % unit: m/s, KXX, horizontal hydraulic head
 KV = K/1000;                % unit: m/s, KYY, vertical   hydraulic head
+alpha = KH/dx^2;
+beta  = KV/dy^2;
+alphaKsi = 1/dx^2/KH;
+betaKsi  = 1/dy^2/KV;
+
 hL = 2;                     % unit: m, fixed head at the downgradient boundary
 % unit: m, upgradient boundary fixed head, by 
 % Dupuit-Forchheimer limits, hmax/Lp < 0.1
@@ -61,19 +61,19 @@ while error > 1e-6
         hold on
         %plot(x,ha,'k','LineWidth',3)
         %ylim([0 10])
-%         qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
-%         qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
-%         qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
-%         qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
-%         qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
-%         ne   = 0.35;                  % effective porosity
-%         vx = qx/ne;
-%         vy = qy/ne;
-%         vx = vx./max(vx(:))*86400;
-%         vy = vy./max(vy(:))*86400;
-% 
-%         hold on;
-%         handle2 = quiver(X,Y,vx,vy);
+        qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
+        qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
+        qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
+        qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
+        qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
+        ne   = 0.35;                  % effective porosity
+        vx = qx/ne;
+        vy = qy/ne;
+        vx = vx./max(vx(:))*86400;
+        vy = vy./max(vy(:))*86400;
+
+        hold on;
+        handle2 = quiver(X,Y,vx,vy);
         %adjust_quiver_arrowhead_size(handle2, 0.1);
         title(['Iteration steps: ', num2str(nstep), ...
             ',    ||error||_{2} = ', num2str(error)])
@@ -83,14 +83,12 @@ while error > 1e-6
 end
 
 Ksi        = zeros(size(h));
-Ksi(end,:) = W*x;
-qx(:,end)  = -K*(3*h(:,end)-4*h(:,end-1)+h(:,end-2))/(2*dx);
-Ksi(:,end) = qx(:,end) .* h(:,end);
+%Ksi(end,:) = W*x;
 
 error = 1e6;
 nstep = 0;
 nplot = 1;
-while error > 1e-6
+while error > 1e-12
     nstep = nstep + 1;
     Ksi_old = Ksi;
     % Gaussian iteration
@@ -100,10 +98,15 @@ while error > 1e-6
                 (2*(alphaKsi+betaKsi));
         end
     end
+    Ksi(:,end) = 4/3*Ksi(:,end-1) - 1/3*Ksi(:,end-2);
+    for j = 2 : size(h,2)-1
+        Ksi(end,j) = dy/3/dx*(h(end,j-1)-h(end,j+1)) - h(end,j) + 4/3*h(end-1,j) - ...
+            h(end-2,j)/3 + 4/3*Ksi(end-1,j) - Ksi(end-1,j)/3;
+    end
     % SOR iteration
     Ksi = (1-omega)*Ksi_old + omega*Ksi;
     error = norm(Ksi-Ksi_old);   
-    if mod(nstep, nplot) == 0 || error - 1e-6 < eps
+    if mod(nstep, nplot) == 0 || error - 1e-12 < eps
         [~,handle1] = contour(x,y,h,20);
         hold on
         [~,handle2] = contour(x,y,Ksi,20);
