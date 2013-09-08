@@ -1,8 +1,11 @@
-Lp   = 500;                   % unit: m, aqifer length
-hLp  = 2;                     % unit: m, fixed head at the downgradient boundary
-W    = 0.5/(365*24*60*60);    % unit: m/year -> m/s, surface recharge
-K    = 1e-4;                  % unit: m/s, hydraulic conductivity
-ne   = 0.35;                  % effective porosity
+function transit_time_analytical(L, hL, W, K, ne)
+% analytical solution of groundwater transit time using equation (17) on
+% R. Chesnaux et al.
+% An Analytical Solution for Ground Water Transit Time through Unconfined
+% Aquifers. Ground Water, 2005
+
+Lp   = L;                   % unit: m, aqifer length
+hLp  = hL;                     % unit: m, fixed head at the downgradient boundary
 hmax = 0.05*Lp;               % unit: m, upgradient boundary fixed head, by
                               % Dupuit-Forchheimer limits, hmax/Lp < 0.1
 alpha = Lp^2 + K*hLp^2/W;
@@ -14,7 +17,6 @@ t2 = hLp*ne/W*log(Lp./x);
 plot(x,t1/(60*60*24*365),'b-')
 hold on
 plot(x,t2/(60*60*24*365),'r--')
-ylim([0 20])
 xlabel('Distance (m)')
 ylabel('Travel Time (years)')
 title('Transit time from water table to exit boundary')

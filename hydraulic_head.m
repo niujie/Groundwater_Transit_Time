@@ -11,7 +11,7 @@ y = (0:dy:B)';
 W  = 0.5/(365*24*60*60);    % unit: m/year -> m/s, surface recharge
 K  = 1e-4;                  % unit: m/s, hydraulic conductivity
 KH = K;                     % unit: m/s, KXX, horizontal hydraulic head
-KV = K/1000;                % unit: m/s, KYY, vertical   hydraulic head
+KV = K;                % unit: m/s, KYY, vertical   hydraulic head
 alpha = KH/dx^2;
 beta  = KV/dy^2;
 alphaKsi = 1/dx^2/KH;
@@ -134,5 +134,5 @@ set(handle1,'ShowText','on')
 set(handle2,'ShowText','on')
 
 transit_time(x,y,Ksi,ha,L,5e-7);
-transit_time(x,y,Ksi,ha,L,8e-8)
-transit_time_analytical;
+transit_time(x,y,Ksi,ha,L,8e-8);
+transit_time_analytical(L, hL, W, K, ne);
