@@ -6,14 +6,14 @@ ne   = 0.35;                  % effective porosity
 hmax = 0.05*Lp;               % unit: m, upgradient boundary fixed head, by
                               % Dupuit-Forchheimer limits, hmax/Lp < 0.1
 alpha = Lp^2 + K*hLp^2/W;
-dx = 10;
-x = (dx:dx:Lp)';
+dx = 5;
+x = (0:dx:L)';
 t1 = ne*sqrt(alpha/(K*W))*(Lp*sqrt(1/Lp^2-1/alpha)-x.*sqrt(1./x.^2-1/alpha) + ...
     log((sqrt(alpha)./x+sqrt(alpha./x.^2-1))/(sqrt(alpha)/Lp+sqrt(alpha/Lp^2-1))));
 t2 = hLp*ne/W*log(Lp./x);
-plot(x,t1/(60*60*24*365),'b.-')
+plot(x,t1/(60*60*24*365),'b-')
 hold on
-plot(x,t2/(60*60*24*365),'r.-')
+plot(x,t2/(60*60*24*365),'r--')
 ylim([0 20])
 xlabel('Distance (m)')
 ylabel('Travel Time (years)')

@@ -2,6 +2,7 @@ L  = 500;        % unit: m, aquifer length
 B  = 10;         % unit: m, aquifer depth
 dx = 5;          % unit: m, x direction step size 
 dy = 1;        % unit: m, y direction step size
+ne = 0.35;                  % effective porosity
 
 x = (0:dx:L)';
 y = (0:dy:B)';
@@ -37,10 +38,11 @@ nplot = 10000;
 omega = 1.5;
 error = 1e6;
 nstep = 0;
-while error > 1e-6
+while error > 1e-8
     nstep = nstep + 1;
     h_old = h;
 
+    %h(end,:) = 2*dy*W/KV/3 + 4/3*h(end-1,:) - 1/3*h(end-2,:); % up
     h(2:end-1,1) = 4/3*h(2:end-1,2)-1/3*h(2:end-1,3); % left
     h(1,1:end-1) = 4/3*h(2,1:end-1)-1/3*h(3,1:end-1); % bottom    
     % Gaussian iteration
@@ -56,25 +58,25 @@ while error > 1e-6
     % SOR iteration
     % h = (1-omega)*h_old + omega*h;
     error = norm(h-h_old);
-    if mod(nstep, nplot) == 0 || error - 1e-6 < eps
+    if mod(nstep, nplot) == 0 || error - 1e-8 < eps
         [~,handle1] = contour(x,y,h,20);
         hold on
-        %plot(x,ha,'k','LineWidth',3)
-        %ylim([0 10])
-        qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
-        qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
-        qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
-        qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
-        qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
-        ne   = 0.35;                  % effective porosity
-        vx = qx/ne;
-        vy = qy/ne;
-        vx = vx./max(vx(:))*86400;
-        vy = vy./max(vy(:))*86400;
-
-        hold on;
-        handle2 = quiver(X,Y,vx,vy);
-        %adjust_quiver_arrowhead_size(handle2, 0.1);
+%         plot(x,ha,'k','LineWidth',3)
+%         ylim([0 10])
+%         qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
+%         qx(:,J)   = -K*(h(:,J+1)-h(:,J-1))/(2*dx);
+%         qx(:,end) = -K*(3*h(:,end)-4*h(:,end-1)+h(:,end-2))/(2*dx);
+%         qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
+%         qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
+%         qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
+%         vx = qx/ne;
+%         vy = qy/ne;
+%         vx = vx./max(vx(:))*86400;
+%         vy = vy./max(vy(:))*86400;
+% 
+%         hold on;
+%         handle2 = quiver(X,Y,vx,vy);
+%         %adjust_quiver_arrowhead_size(handle2, 0.1);
         title(['Iteration steps: ', num2str(nstep), ...
             ',    ||error||_{2} = ', num2str(error)])
         drawnow
@@ -83,11 +85,11 @@ while error > 1e-6
 end
 
 Ksi        = zeros(size(h));
-%Ksi(end,:) = W*x;
+Ksi(end,:) = W*x;
 
 error = 1e6;
 nstep = 0;
-nplot = 1;
+nplot = 100;
 while error > 1e-12
     nstep = nstep + 1;
     Ksi_old = Ksi;
@@ -98,18 +100,19 @@ while error > 1e-12
                 (2*(alphaKsi+betaKsi));
         end
     end
-    Ksi(:,end) = 4/3*Ksi(:,end-1) - 1/3*Ksi(:,end-2);
-    for j = 2 : size(h,2)-1
-        Ksi(end,j) = dy/3/dx*(h(end,j-1)-h(end,j+1)) - h(end,j) + 4/3*h(end-1,j) - ...
-            h(end-2,j)/3 + 4/3*Ksi(end-1,j) - Ksi(end-1,j)/3;
-    end
+    % top boundary
+%     for j = 2 : size(h,2)-1
+%         Ksi(end,j) = dy/3/dx*(h(end,j-1)-h(end,j+1)) - h(end,j) + 4/3*h(end-1,j) - h(end-2,j)/3 + ...
+%             4/3*Ksi(end-1,j) - Ksi(end-2,j)/3 - 2*dy*W/3/KV;
+%     end    
+    Ksi(:,end) = 4/3*Ksi(:,end-1) - 1/3*Ksi(:,end-2);   % right
     % SOR iteration
     Ksi = (1-omega)*Ksi_old + omega*Ksi;
     error = norm(Ksi-Ksi_old);   
     if mod(nstep, nplot) == 0 || error - 1e-12 < eps
         [~,handle1] = contour(x,y,h,20);
         hold on
-        [~,handle2] = contour(x,y,Ksi,20);
+        [C,handle2] = contour(x,y,Ksi,20);
         vx(1,:) = -(-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
         vx(I,:) = -(Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
         vx(end,:) = -(3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
@@ -129,3 +132,7 @@ while error > 1e-12
 end
 set(handle1,'ShowText','on')
 set(handle2,'ShowText','on')
+
+transit_time(x,y,Ksi,ha,L,5e-7);
+transit_time(x,y,Ksi,ha,L,8e-8)
+transit_time_analytical;
