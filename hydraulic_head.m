@@ -25,6 +25,9 @@ ha       = sqrt(W/K*(L^2-x.^2)+hL^2);
 h        = zeros(length(y),length(x))+B;
 h(:,end) = hL;
 h(end,:) = ha;
+for i = 1 : size(x)
+    Y(:,i) = Y(:,i) .* ha(i) / max(Y(:,i));
+end
 
 I = (2:size(h,1)-1)';
 J = (2:size(h,2)-1)';
@@ -32,7 +35,7 @@ J = (2:size(h,2)-1)';
 qx = zeros(size(h));
 qy = zeros(size(h));
 
-nplot = 10000;
+nplot = 1000;
 omega = 1.5;
 error = 1e6;
 nstep = 0;
@@ -57,10 +60,10 @@ while error > 1e-8
 %     h = (1-omega)*h_old + omega*h;
     error = norm(h-h_old);
     if mod(nstep, nplot) == 0 || error - 1e-8 < eps
-        [~,handle1] = contour(x,y,h,20);
+        [~,handle1] = contour(X,Y,h,20);
         hold on
-%         plot(x,ha,'k','LineWidth',3)
-%         ylim([0 10])
+        plot(x,ha,'b--','LineWidth',2)
+        ylim([0 10])
 
         title(['Iteration steps: ', num2str(nstep), ...
             ',    ||error||_{2} = ', num2str(error)])
@@ -78,8 +81,8 @@ vx = qx/ne*86400;
 vy = qy/ne*86400;
 
 hold on;
-handle2 = quiver(X,Y,vx,vy);
-adjust_quiver_arrowhead_size(handle2, 0.3);
+handle2 = quiver(X,Y,vx,vy,3.0);
+adjust_quiver_arrowhead_size(handle2, 0.1);
 
 Ksi        = zeros(size(h));
 % top boundary, use this condition doesn't mathe the velocities obtained
@@ -111,31 +114,36 @@ while error > 1e-13
     Ksi = (1-omega)*Ksi_old + omega*Ksi;
     error = norm(Ksi-Ksi_old);   
     if mod(nstep, nplot) == 0 || error - 1e-13 < eps
-        [~,handle1] = contour(x,y,h,20);
+        [~,handle1] = contour(X,Y,h,20);
         hold on
-        [C,handle2] = contour(x,y,Ksi,20);
+        plot(x,ha,'b--','LineWidth',2)
+        [C,handle2] = contour(X,Y,Ksi,20);
 
         title(['Iteration steps: ', num2str(nstep), ...
             ',    ||error||_{2} = ', num2str(error)])
+        ylim([0 10])
         drawnow
         hold off
     end    
 end
-qx(1,:) = (-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
-qx(I,:) = (Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
-qx(end,:) = (3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
-qy(:,1) = -(-3*Ksi(:,1)+4*Ksi(:,2)-Ksi(:,3))/(2*dx);
-qy(:,J) = -(Ksi(:,J+1)-Ksi(:,J-1))/(2*dx);
-qy(:,end) = -(3*Ksi(:,end)-4*Ksi(:,end-1)+Ksi(:,end-2))/(2*dx);
-vx = qx/ne*86400;
-vy = qy/ne*86400;
+% qx(1,:) = (-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
+% qx(I,:) = (Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
+% qx(end,:) = (3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
+% qy(:,1) = -(-3*Ksi(:,1)+4*Ksi(:,2)-Ksi(:,3))/(2*dx);
+% qy(:,J) = -(Ksi(:,J+1)-Ksi(:,J-1))/(2*dx);
+% qy(:,end) = -(3*Ksi(:,end)-4*Ksi(:,end-1)+Ksi(:,end-2))/(2*dx);
+% vx = qx/ne*86400;
+% vy = qy/ne*86400;
 hold on;
-handle3 = quiver(X,Y,vx,vy);
-adjust_quiver_arrowhead_size(handle3, 0.3);
+plot(x,ha,'b--','LineWidth',2)
+handle3 = quiver(X,Y,vx,vy,3.0);
+adjust_quiver_arrowhead_size(handle3, 0.1);
         
 set(handle1,'ShowText','on')
 set(handle2,'ShowText','on')
+ylim([0 10])
 
 transit_time(x,y,Ksi,ha,L,5e-7);
+transit_time_analytical(L, hL, W, K, ne);
 transit_time(x,y,Ksi,ha,L,8e-8);
 transit_time_analytical(L, hL, W, K, ne);

@@ -42,6 +42,7 @@ for n = 1 : length(v)-1
     hh = interp1(x,ha,cx2);
     cy2 = cy2.*hh/cy2(1);
     plot(cx2, cy2);
+    ylim([0 10])
     drawnow
     
     icx2 = linspace(min(cx2),max(cx2),nx);
@@ -67,6 +68,7 @@ for n = 1 : length(v)-1
     xt(n) = icx1(1);
 end
 xt(end) = L;
-plot(x,ha,'k','LineWidth',3)
+plot(x,ha,'b--','LineWidth',2)
+ylim([0 10])
 figure
 plot(xt,t,'ko','MarkerFaceColor','k','MarkerSize',3); hold on
