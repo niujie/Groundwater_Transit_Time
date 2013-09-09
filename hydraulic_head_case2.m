@@ -4,20 +4,20 @@
 L  = 1000;       % unit: m, aquifer length
 B  = 60;         % unit: m, aquifer depth
 dx = 50;         % unit: m, x direction step size 
-dy = 10;        % unit: m, y direction step size
+dy = 10;         % unit: m, y direction step size
+ne = 0.35;     % effective porosity
 
 x = (0:dx:L)';
 y = (0:dy:B)';
 [X,Y] = meshgrid(x,y);
 
-W  = 0.5/(365*24*60*60);    % unit: m/year -> m/s, surface recharge
-K  = 1e-4;                  % unit: m/s, hydraulic conductivity
+K  = 1e-3;                  % unit: m/s, hydraulic conductivity
 alpha = K/dx^2;
 beta  = K/dy^2;
 alphaKsi = 1/dx^2/K;
 betaKsi  = 1/dy^2/K;
 
-H = 4e-5 * L;
+H = 4e-4 * L;
 h        = zeros(length(y),length(x))+B;
 h(end,:) = B + H/2*(1+cos(pi*x/L));
 
@@ -33,7 +33,7 @@ nplot = 100;
 omega = 1.5;
 error = 1e6;
 nstep = 0;
-while error > 1e-6
+while error > 1e-8
     nstep = nstep + 1;
     h_old = h;
 
@@ -53,7 +53,7 @@ while error > 1e-6
     % SOR iteration
     % h = (1-omega)*h_old + omega*h;
     error = norm(h-h_old);
-    if mod(nstep, nplot) == 0 || error - 1e-6 < eps
+    if mod(nstep, nplot) == 0 || error - 1e-8 < eps
         [~,handle1] = contour(x,y,h,20);
         hold on
         qx(:,1)   = -K*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
@@ -62,7 +62,6 @@ while error > 1e-6
         qy(1,:) = -K*(-3*h(1,:)+4*h(2,:)-h(3,:))/(2*dy);
         qy(I,:) = -K*(h(I+1,:)-h(I-1,:))/(2*dy);
         qy(end,:) = -K*(3*h(end,:)-4*h(end-1,:)+h(end-2,:))/(2*dy);
-        ne   = 0.35;                  % effective porosity
         vx = qx/ne;
         vy = qy/ne;
 
@@ -93,8 +92,7 @@ while error > 1e-12
     end
     % top boundary
     for j = 2 : size(h,2)-1
-        Ksi(end,j) = dy/3/dx*(h(end,j-1)-h(end,j+1)) - h(end,j) + 4/3*h(end-1,j) - h(end-2,j)/3 + ...
-            4/3*Ksi(end-1,j) - Ksi(end-2,j)/3;
+        Ksi(end,j) = K*dy/3/dx*(h(end,j-1)-h(end,j+1)) + 4/3*Ksi(end-1,j) - Ksi(end-2,j)/3;
     end
     % SOR iteration
     Ksi = (1-omega)*Ksi_old + omega*Ksi;
@@ -103,12 +101,15 @@ while error > 1e-12
         [~,handle1] = contour(x,y,h,10);
         hold on
         [~,handle2] = contour(x,y,Ksi,20);
-        vx(1,:) = (-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
-        vx(I,:) = (Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
-        vx(end,:) = (3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
-        vy(:,1) = -(-3*Ksi(:,1)+4*Ksi(:,2)-Ksi(:,3))/(2*dx);
-        vy(:,J) = -(Ksi(:,J+1)-Ksi(:,J-1))/(2*dx);
-        vy(:,end) = -(3*Ksi(:,end)-4*Ksi(:,end-1)+Ksi(:,end-2))/(2*dx);
+        qx(1,:) = (-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
+        qx(I,:) = (Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
+        qx(end,:) = (3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
+        qy(:,1) = -(-3*Ksi(:,1)+4*Ksi(:,2)-Ksi(:,3))/(2*dx);
+        qy(:,J) = -(Ksi(:,J+1)-Ksi(:,J-1))/(2*dx);
+        qy(:,end) = -(3*Ksi(:,end)-4*Ksi(:,end-1)+Ksi(:,end-2))/(2*dx);
+        
+        vx = qx/ne;
+        vy = qy/ne;        
         hold on;
         handle3 = quiver(X,Y,vx,vy);
         adjust_quiver_arrowhead_size(handle3, 0.3);
