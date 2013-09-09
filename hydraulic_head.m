@@ -77,6 +77,8 @@ while error > 1e-8
         hold off
     end
 end
+% when doing the particle tracking to estimate traveling time
+% velocities calculated from the derivative of head are correct
 qx(:,1)   = -KH*(-3*h(:,1)+4*h(:,2)-h(:,3))/(2*dx);
 qx(:,J)   = -KH*(h(:,J+1)-h(:,J-1))/(2*dx);
 qx(:,end) = -KH*(3*h(:,end)-4*h(:,end-1)+h(:,end-2))/(2*dx);
@@ -133,6 +135,9 @@ while error > 1e-13
         hold off
     end    
 end
+% when doing the particle tracking to estimate traveling time
+% velocities calculated from the derivative of stream function are incorrect
+% use the derivative of head above instead
 % qx(1,:) = (-3*Ksi(1,:)+4*Ksi(2,:)-Ksi(3,:))/(2*dy);
 % qx(I,:) = (Ksi(I+1,:)-Ksi(I-1,:))/(2*dy);
 % qx(end,:) = (3*Ksi(end,:)-4*Ksi(end-1,:)+Ksi(end-2,:))/(2*dy);
