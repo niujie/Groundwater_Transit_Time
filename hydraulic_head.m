@@ -35,7 +35,7 @@ J = (2:size(h,2)-1)';
 qx = zeros(size(h));
 qy = zeros(size(h));
 
-nplot = 1000;
+nplot = 10000;
 omega = 1.5;
 error = 1e6;
 nstep = 0;
@@ -43,7 +43,13 @@ while error > 1e-8
     nstep = nstep + 1;
     h_old = h;
 
-    %h(end,:) = 2*dy*W/KV/3 + 4/3*h(end-1,:) - 1/3*h(end-2,:); % up
+    % up boundary condition
+    % this one gives the right velocity field
+    % but head can't converge to analytical water table
+    % and converges very slowly
+    % h(end,:) = 2*dy*W/KV/3 + 4/3*h(end-1,:) - 1/3*h(end-2,:);
+    % h(end,:) = dy*W/KV + h(end-1, :);  % first order
+    
     h(2:end-1,1) = 4/3*h(2:end-1,2)-1/3*h(2:end-1,3); % left
     h(1,1:end-1) = 4/3*h(2,1:end-1)-1/3*h(3,1:end-1); % bottom    
     % Gaussian iteration
@@ -88,6 +94,7 @@ Ksi        = zeros(size(h));
 % top boundary, use this condition doesn't mathe the velocities obtained
 % from qx = -K dh/dx and qy = -K dh/dy
 % but the transit time result matches
+% Ksi(:,end) = qx(:,end) .* Y(:,end);
 Ksi(end,:) = W*x;
 
 error = 1e6;
@@ -109,7 +116,7 @@ while error > 1e-13
 %     for j = 2 : size(h,2)-1
 %         Ksi(end,j) = KH*dy/3/dx*(h(end,j-1)-h(end,j+1)) + 4/3*Ksi(end-1,j) - Ksi(end-2,j)/3;
 %     end
-    Ksi(:,end) = 4/3*Ksi(:,end-1) - 1/3*Ksi(:,end-2);   % right
+   Ksi(:,end) = 4/3*Ksi(:,end-1) - 1/3*Ksi(:,end-2);   % right
     % SOR iteration
     Ksi = (1-omega)*Ksi_old + omega*Ksi;
     error = norm(Ksi-Ksi_old);   
@@ -147,3 +154,4 @@ transit_time(x,y,Ksi,ha,L,5e-7);
 transit_time_analytical(L, hL, W, K, ne);
 transit_time(x,y,Ksi,ha,L,8e-8);
 transit_time_analytical(L, hL, W, K, ne);
+particle_tracking;
